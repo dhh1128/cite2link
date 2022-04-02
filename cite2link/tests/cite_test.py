@@ -71,6 +71,14 @@ def assert_found(lookup, title):
 
 
 def test_books_found():
+    assert_found('art of faith', 'Articles of Faith')
+    assert_found('a of f', 'Articles of Faith')
+    assert_found('articles of faith', 'Articles of Faith')
+    assert_found('jshist', 'Joseph Smith-History')
+    assert_found('jshistory', 'Joseph Smith-History')
+    assert_found('joseph smith-m', 'Joseph Smith-Matthew')
+    assert_found('js-m', 'Joseph Smith-Matthew')
+    assert_found('jsm', 'Joseph Smith-Matthew')
     assert_found('eze', 'Ezekiel')
     assert_found('do', 'Doctrine and Covenants')
     assert_found('d&amp;c', 'Doctrine and Covenants')
@@ -97,11 +105,16 @@ def test_books_not_found():
     assert find_book('matthewx') is None
     # Partial name that isn't canonical and therefore not truncatable
     assert find_book('Cantic') is None
+    # Hyphen in the wrong place
+    assert find_book('j-sm') is None
 
 
-def xtest_parse():
-    x = parse("1 Ne 3:7")
-    assert x.book.title == "1 Ne"
-    assert x.chapter == '3'
-    assert x.verses == ['7']
+def assert_parse(ref, book, chapter, verse):
+    b, ch, v = parse(ref)
+    assert b == book
+    assert ch == chapter
+    assert v == verse
+
+def test_parse():
+    assert_parse("1 Ne 3:7", '1 Ne', '3', '7')
 

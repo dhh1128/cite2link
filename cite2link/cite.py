@@ -83,8 +83,8 @@ bible = [ot_books, nt_books]
 bom_books = load('1 nephi:ne/1ne,2 nephi:ne/2ne,jacob/jac,enos/en,jarom/jar,omni/om,words of mormon/wo,' +
     'mosiah/mosi,alma/al,helaman:hel,3 nephi:ne/3ne,4 nephi:ne/4ne,mormon:morm,ether/et,moroni:moro')
 
-pgp_books = load('moses:mos/mose,abraham:abr/ab,joseph smith-matthew:js-m/joseph smith-m,' +
-    'joseph smith-history:js-h/joseph smith-h,articles of faith:a of f/ar')
+pgp_books = load('moses:mos/mose,abraham:abr/ab,joseph smith-matthew|jsm|jsmatthew|jsmatt|js-matthew:js-m/joseph smith-m,' +
+    'joseph smith-history|jsh|jshistory|jshist|js-history:js-h/joseph smith-h,articles of faith|art of faith|art faith|af:a of f/ar')
 
 doctrine_and_covenants = load('doctrine and covenants|doctrine & covenants|dc:d&c/do,official declaration/of')
 
@@ -95,18 +95,6 @@ all_books = quad_books
 del load
 
 lead_ordinal_pat = re.compile(r'(first|1(?:st)?|sec(?:ond)?|2(?:nd)?|third|3(?:rd)?|fourth|4(?:th)?)\s*(.*)', re.I)
-
-scripture_cite_pat = re.compile(r"""
-    (first|1(?:st)?|2(?:nd)?|third|3(?:rd)?|fourth|4(?:th)?)\s* # leading volume, cap group 1
-    ([a-z ]+) # book/author, cap group 2
-    \W*
-    (\d+) # chapter (or item, for some sources), cap group 3
-    ( # everything after chapter/item is optional
-    \s*:\s*
-    ([-0-9, ]+) # verses
-    )? # end of optional part
-    """, re.I | re.VERBOSE
-)
 
 def normalize_ordinal(ordinal):
     return ordinal[0] if ordinal[0].isdigit() else str('ieho'.index(ordinal[1].lower()) + 1)
@@ -156,6 +144,7 @@ def find_book(book_name_in_ref):
                     # match it all the way. We can abort our loop and just return None.
                     return
 
+
 def next_book(container):
     for item in container:
         if isinstance(item, Book):
@@ -166,7 +155,20 @@ def next_book(container):
                 yield book
 
 
+scripture_cite_pat = re.compile(r"""
+    ((?:first|1(?:st)?|sec(?:ond)?|2(?:nd)?|third|3(?:rd)?|fourth|4(?:th)?)\s* # leading volume
+    (?:[a-z]+(?:\ +[a-z])*)) # book/author, cap group 1
+    \W*
+    (\d+) # chapter (or item, for some sources), cap group 2
+    (?: # everything after chapter/item is optional
+    \s*:\s*
+    ([-0-9,\ ]+) # verses, cap group 3
+    )? # end of optional part
+    """, re.I | re.VERBOSE
+)
+
+
 def parse(ref):
     m = scripture_cite_pat.match(ref)
     if m:
-        return m.group(1), m.group(2)
+        return m.group(1), m.group(2), m.group(3)
