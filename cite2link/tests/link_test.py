@@ -1,8 +1,11 @@
-from ..cite import *
+from ..cite import resolve
 from ..link import *
 
-def test_churchofjesuschrist():
-    b, ch, v = parse('Gen 1:1')
-    book = find_book(b)
-    v = join_nums_and_pairs(normalize_verses(v))
-    assert make_churchofjesuschrist(book, ch, v) == 'x'
+
+def assert1(ref, url):
+    book, chapter, verses = resolve(ref)
+    assert make_html_churchofjesuschrist(book, chapter, verses) == 'https://www.churchofjesuschrist.org/study/scriptures/' + url
+
+
+def test_html_churchofjesuschrist():
+    assert1('Gen 1:1', 'ot/Gen/1.1?lang=eng')
