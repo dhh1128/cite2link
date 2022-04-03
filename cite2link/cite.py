@@ -5,7 +5,7 @@ from .books import find_book
 
 scripture_cite_pat = re.compile(r"""
     ((?:first|1(?:st)?|sec(?:ond)?|2(?:nd)?|third|3(?:rd)?|fourth|4(?:th)?)?\s* # leading volume
-    (?:[a-z.]+(?:\ +[a-z.])*)) # book/author, cap group 1
+    (?:[a-z&.]+(?:\ +[a-z&.]+)*)) # book/author, cap group 1
     \W*
     (\d+) # chapter (or item, for some sources), cap group 2
     (?: # everything after chapter/item is optional

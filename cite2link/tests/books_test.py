@@ -1,6 +1,13 @@
 from ..books import *
 
 
+def test_book_counts():
+    assert len(old_testament) == 39
+    assert len(new_testament) == 27
+    assert len(book_of_mormon) == 15
+    assert len(pearl_of_great_price) == 5
+
+
 def assert_book(book, name, ordinal, abbrev, *names):
     assert book.names[0] == name
     assert book.ordinal == ordinal
@@ -10,24 +17,16 @@ def assert_book(book, name, ordinal, abbrev, *names):
         for n in names:
             assert n in other_names
 
-
-def test_book_counts():
-    assert len(old_testament) == 39
-    assert len(new_testament) == 27
-    assert len(book_of_mormon) == 15
-    assert len(pearl_of_great_price) == 5
-
-
 def test_easy_book():
-    assert_book(new_testament[0], 'matthew', None, 'matt')
+    assert_book(new_testament[0], 'matthew', None, 'Matt')
 
 
 def test_ordinal_book():
-    assert_book(book_of_mormon[10], 'nephi', '3', 'ne')
+    assert_book(book_of_mormon[10], 'nephi', '3', 'Ne')
 
 
 def test_hard_book():
-    assert_book(old_testament[21], 'song of solomon', None, 'song', 'sos', 'song of songs', 'canticles')
+    assert_book(old_testament[21], 'songofsolomon', None, 'Song', 'sos', 'songofsongs', 'canticles')
 
 
 def test_uniques():
@@ -55,9 +54,9 @@ def test_uniques():
                 if book2 != book:
                     name2 = book2.unique_basis
                     common_len = max(common_len, count_common(name, name2))
-            expected_unique = name[:common_len + 1]
+            expected_unique = name[:common_len + 1].replace('-', '')
             if book.unique != expected_unique:
-                print('Expected unique for %s to be "%s"' % (book.title, expected_unique))
+                print('Expected unique for %s to be "%s", not "%s"' % (book.abbrev_title, expected_unique, book.unique))
                 perfect = False
         return perfect
 
@@ -71,25 +70,28 @@ def assert_found(lookup, title):
 
 
 def test_books_found():
+    assert_found('1jn', '1 John')
+    assert_found('Joseph Smith History', 'Joseph Smith - History')
+    assert_found('d & c', 'Doctrine & Covenants')
+    assert_found('d&c', 'Doctrine & Covenants')
     assert_found('art of faith', 'Articles of Faith')
     assert_found('a of f', 'Articles of Faith')
     assert_found('articles of faith', 'Articles of Faith')
-    assert_found('jshist', 'Joseph Smith-History')
-    assert_found('jshistory', 'Joseph Smith-History')
-    assert_found('joseph smith-m', 'Joseph Smith-Matthew')
-    assert_found('js-m', 'Joseph Smith-Matthew')
-    assert_found('js&mdash;m', 'Joseph Smith-Matthew')
-    assert_found('jsm', 'Joseph Smith-Matthew')
+    assert_found('jshist', 'Joseph Smith - History')
+    assert_found('jshistory', 'Joseph Smith - History')
+    assert_found('joseph smith-m', 'Joseph Smith - Matthew')
+    assert_found('js-m', 'Joseph Smith - Matthew')
+    assert_found('js&mdash;m', 'Joseph Smith - Matthew')
+    assert_found('jsm', 'Joseph Smith - Matthew')
     assert_found('eze', 'Ezekiel')
-    assert_found('do', 'Doctrine and Covenants')
-    assert_found('d&amp;c', 'Doctrine and Covenants')
-    assert_found('d&c', 'Doctrine and Covenants')
-    assert_found('dc', 'Doctrine and Covenants')
+    assert_found('do', 'Doctrine & Covenants')
+    assert_found('d&amp;c', 'Doctrine & Covenants')
+    assert_found('d&c', 'Doctrine & Covenants')
+    assert_found('dc', 'Doctrine & Covenants')
     assert_found('lu', 'Luke')
     assert_found('Matthe', 'Matthew')
     assert_found('sos', 'Song of Solomon')
     assert_found('Canticles', 'Song of Solomon')
-    assert_found('1jn', '1 John')
     assert_found('ThirdJohn.', '3 John')
     assert_found('2nd Pet.', '2 Peter')
     assert_found('4th nephi', '4 Nephi')
@@ -104,7 +106,7 @@ def test_books_not_found():
     assert find_book('m') is None
     # Too many characters
     assert find_book('matthewx') is None
+    # Same as a unique prefix, but diverges after
+    assert find_book('gesxyz') is None
     # Partial name that isn't canonical and therefore not truncatable
     assert find_book('Cantic') is None
-    # Hyphen in the wrong place
-    assert find_book('j-sm') is None

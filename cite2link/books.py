@@ -1,70 +1,77 @@
 import re
 
+defn_pat = re.compile(r'\s*([^:/]+)(?::\s*([A-Za-z- &]+))?(?:/\s*([1-4a-z]+))?\s*')
 
-_word_splitter = re.compile(r'(\w)(\w*)(\W|$)')
 
-
-def _title_case(txt):
-    capitalized = ''
-    for m in _word_splitter.finditer(txt):
-        capitalized += m.group(1).upper() + m.group(2) + m.group(3)
-    return capitalized.replace(' Of ', ' of ').replace(' And ', ' and ')
+def _purify_name_chars(name):
+    name = name.lower()
+    return ''.join([c for c in name if c.isalpha() or c.isdigit()])
 
 
 class Book:
-    def __init__(self, definition, collection_key):
+    def __init__(self, defn, collection_key):
+        # Associate the book with its parent collection
         self.collection_key = collection_key
+        # Set defaults (may be overridden)
         self.chapter_and_verse = True
-        definition = definition.lower().strip()
-        if definition[0].isdigit():
-            self.ordinal = definition[0]
-            definition = definition[1:].lstrip()
+        self.unique = None
+        self.abbrev = None
+        # Strip off ordinal if applicable.
+        if defn[0].isdigit():
+            self.ordinal = defn[0]
+            defn = defn[1:].lstrip()
         else:
             self.ordinal = None
-        self.unique = None
-        i = definition.find('/')
-        if i > -1:
-            self.unique = definition[i + 1:]
-            definition = definition[:i]
-        i = definition.find(':')
-        self.abbrev = None
-        if i > -1:
-            self.abbrev = definition[i + 1:]
-            definition = definition[:i]
+        # Parse the rest of the expression
+        m = defn_pat.match(defn)
+        # If we've been given a precalculated string that's
+        # the minumum prefix to make this name unique,
+        # record that.
+        if m.group(3):
+            self.unique = m.group(3)
+        # If we've been given a canonical abbreviation, record it.
+        # This value can have punctuation, spaces, and capitals.
+        ab = None
+        if m.group(2):
+            self.abbrev = m.group(2)
+            ab = _purify_name_chars(self.abbrev)
+            # If we didn't get unique, but we have an abbreviation,
+            # use the abbreviation as our unique value.
             if not self.unique:
-                self.unique = self.abbrev
-        names = definition.replace('.', '').split('|')
+                self.unique = ab
+        # Split all remaining names.
+        names = m.group(1).split('|')
+        # Notice if this is a book that doesn't have both chapter
+        # and verse.
         if names[0].endswith('!'):
             self.chapter_and_verse = False
             names[0] = names[0][:-1]
-        self.names = names[:]
+        # Record the canonical title. This value can have spaces
+        # and capitals.
+        self.title = self.ordinal + ' ' + names[0] if self.ordinal else names[0]
+        # Remove spaces, punct, and lower case all the names.
+        self.names = [_purify_name_chars(item) for item in names]
+        if ab and ab not in self.names:
+            self.names.append(ab)
+        # If we still didn't have a unique value, then use
+        # the full name.
         if not self.unique:
-            self.unique = names[0]
-        for v in names:
-            i = v.find(' ')
-            if i > -1:
-                words = v.split(' ')
-                acronym = ''.join([w[0] for w in words])
-                if acronym not in self.names:
-                    self.names.append(acronym)
-        self.first_chars = set([x[0] for x in self.names])
-
-    @property
-    def title(self):
-        t = _title_case(self.names[0])
-        return self.ordinal + ' ' + t if self.ordinal else t
+            self.unique = self.names[0]
+        # Get a list of all the characters that begin names of this book.
+        # We will use this later to optimize lookups.
+        self.first_chars = set([name[0] for name in self.names])
 
     @property
     def abbrev_title(self):
-        t = self.abbrev[0].upper() + self.abbrev[1:]
-        return self.ordinal + ' ' + t if self.ordinal else t
+        if self.abbrev:
+            return self.ordinal + ' ' + self.abbrev if self.ordinal else self.abbrev
 
     @property
     def unique_basis(self):
         return self.ordinal + self.names[0] if self.ordinal else self.names[0]
 
-    def __str(self):
-        return self.title
+    def __str__(self):
+        return self.abbrev_title if self.abbrev_title else self.title
 
 
 def load(collection_key, definitions):
@@ -73,35 +80,44 @@ def load(collection_key, definitions):
 
 # Define collections of books. Each item is in the format:
 #       long name|alternate name|another alt:can/unique
-# ...where "can" means a canonical abbreviation, and "unique"
+# ...where long name is the preferred full form title, in its
+# proper case, "can" means a canonical abbreviation, and "unique"
 # means the shortest string that uniquely identifies the book
 # in the corpus of all book names. If the first long name for
 # a book ends with !, this means the book doesn't have
 # both chapter and verse (it's cited with a single number).
 
-old_testament = load('ot', 'genesis:gen/ge,exodus:ex,leviticus:lev/le,numbers:num/nu,deuteronomy:deut/de,joshua:josh,' +
-    'judges:judg,ruth/ru,1 samuel:sam/1sa,2 samuel:sam/2sa,1 kings:kgs/1ki,2 kings:kgs/2ki,1 chronicles:chr/1ch,' +
-    '2 chronicles:chr/2ch,ezra/ezr,nehemiah:neh/ne,esther:esth/es,job,psalms:ps,proverbs:prov/pr,' +
-    'ecclesiastes:eccl/ec,song of solomon|song of songs|canticles:song/so,isaiah:isa/is,jeremiah:jer/je,' +
-    'lamentations:lam/la,ezekiel:ezek/eze,daniel:dan/da,hosea/ho,joel/joe,amos/am,obadiah:obad/ob,jonah/jon,' +
-    'micah/mi,nahum/na,habakkuk:hab,zephaniah:zeph/zep,haggai|hagai:hag,zechariah:zech/zec,malachi:mal')
+old_testament = load('ot',
+    'Genesis|gs|gn:Gen/ge,Exodus:Ex,Leviticus:Lev/le,Numbers|nbrs:Num/nu,Deuteronomy:Deut/de,Joshua:Josh,' +
+    'Judges:Judg,Ruth/ru,1 Samuel:Sam/1sa,2 Samuel:Sam/2sa,1 Kings|kngs:Kgs/1ki,2 Kings|kngs:Kgs/2ki,' +
+    '1 Chronicles|chrn:Chr/1ch,2 Chronicles|chrn:Chr/2ch,Ezra/ezr,Nehemiah:Neh/ne,Esther:Esth/es,Job,' +
+    'Psalms|psal:Ps,Proverbs|prvbs|prvb:Prov/pr,Ecclesiastes:Eccl/ec,' +
+    'Song of Solomon|songofsongs|canticles|cant|sos|ss:Song/so,Isaiah:Isa/is,Jeremiah:Jer/je,' +
+    'Lamentations:Lam/la,Ezekiel:Ezek/eze,Daniel:Dan/da,Hosea/ho,Joel/joe,Amos/am,' +
+    'Obadiah:Obad/ob,Jonah|jnh/jon,Micah/mi,Nahum/na,Habakkuk:Hab,Zephaniah:Zeph/zep,Haggai|hagai:Hag,' +
+    'Zechariah:Zech/zec,Malachi:Mal')
 
-new_testament = load('nt', 'matthew:matt/mat,mark/mar,luke/lu,john/joh,acts/ac,romans:rom/ro,1 corinthians:cor/1co,' +
-    '2 corinthians:cor/2co,galatians:gal/ga,ephesians:eph/ep,philippians|phillipians:philip/phili,' +
-    'colossians:col/co,1 thessalonians:thes/1th,2 thessalonians:thes/2th,1 timothy:tim/1ti,2 timothy:tim/2ti,' +
-    'titus/ti,philemon:philem/phile,hebrews:heb,james/jam,1 peter:pet/1pe,2 peter:pet/2pe,1 john:jn/1jo,' +
-    '2 john:jn/2jo,3 john:jn/3jo,jude,revelation|apocalypse:rev/re')
+new_testament = load('nt',
+    'Matthew|mathew:Matt/mat,Mark/mar,Luke/lu,John/joh,Acts/ac,Romans:Rom/ro,1 Corinthians|crnth:Cor/1co,' +
+    '2 Corinthians|crnth:Cor/2co,Galatians|gltn:Gal/ga,Ephesians|ephs:Eph/ep,Philippians|phlp|phillipians:Philip/phili,' +
+    'Colossians|cls:Col/co,1 Thessalonians:Thes/1th,2 Thessalonians:Thes/2th,1 Timothy:Tim/1ti,2 Timothy:Tim/2ti,' +
+    'Titus/ti,Philemon:Philem/phile,Hebrews:Heb,James/jam,1 Peter:Pet/1pe,2 Peter:Pet/2pe,1 John:Jn/1jo,' +
+    '2 John:Jn/2jo,3 John:Jn/3jo,Jude,Revelation|apocalypse:Rev/re')
 
 bible = [old_testament, new_testament]
 
-book_of_mormon = load('bom', '1 nephi:ne/1ne,2 nephi:ne/2ne,jacob/jac,enos/en,jarom/jar,omni/om,words of mormon/wo,' +
-    'mosiah/mosi,alma/al,helaman:hel,3 nephi:ne/3ne,4 nephi:ne/4ne,mormon:morm,ether/et,moroni:moro')
+book_of_mormon = load('bofm',
+    '1 Nephi:Ne/1ne,2 Nephi:Ne/2ne,Jacob/jac,Enos/en,Jarom/jar,Omni/om,Words of Mormon|wm|wom:W of M/wo,' +
+    'Mosiah/mosi,Alma/al,Helaman:Hel,3 Nephi:Ne/3ne,4 Nephi:Ne/4ne,Mormon:Morm,Ether/et,Moroni:Moro')
 
 pearl_of_great_price = load('pgp',
-    'moses:mos/mose,abraham:abr/ab,joseph smith-matthew|jsm|jsmatthew|jsmatt|js-matthew:js-m/joseph smith-m,' +
-    'joseph smith-history|jsh|jshistory|jshist|js-history:js-h/joseph smith-h,articles of faith!|art of faith|art faith|af:a of f/ar')
+    'Moses:Mos/mose,Abraham|abrhm|abrh:Abr/ab,Joseph Smith - Matthew|jsmatthew|jsm|jsmatt|jsmat:JS-M/josephsmithm,' +
+    'Joseph Smith - History|jshistory|jsh|jshist|jshis:JS-H/josephsmithh,' +
+    'Articles of Faith!|artoffaith|artfaith|aof|af|aoff:A of F/ar')
 
-doctrine_and_covenants = load('dc', 'doctrine and covenants|doctrine & covenants|dc:d&c/do,official declaration!/of')
+doctrine_and_covenants = load('dc-testament',
+    'Doctrine & Covenants|doctrineandcovenants|docandcov|dnc|d&c|dc:D&C/do,' +
+    'Official Declaration!|offdec:od/of')
 
 quad = [bible, book_of_mormon, doctrine_and_covenants, pearl_of_great_price]
 
@@ -140,6 +156,10 @@ def find_book(book_name_in_ref):
     named = Book(book_name_in_ref, '')       # imagine book_name_in_ref = "1 Chron."
     name = named.names[0]                    # "chron"
     first_char = name[0]
+    # If we wanted to optimize this, we could build a dict of lists of books,
+    # indexed by the first letter of their names. This would allow us to skip
+    # a lot of iteration. However, the optimization doesn't seem important
+    # right now.
     for book in next_book(library):
         # First test: make sure both books lack an ordinal -- or that both
         # books have one, and the ordinals match.
@@ -148,10 +168,7 @@ def find_book(book_name_in_ref):
             # this book's name? If no, there's no point in doing fancier
             # comparisons.
             if first_char in book.first_chars:
-                # If we got a canonical abbreviation, it's a match.
-                if name == book.abbrev:
-                    return book
-                # If we got an exact book name, it's a match, too.
+                # If we got an exact book name, it's a match.
                 for n in book.names:
                     if name == n:
                         return book
