@@ -27,10 +27,28 @@ def test_abbrev_ref():
 
     test('Joseph Smith --matt 1:17', 'JS-M 1:17')
     test('Art of Faith 1:7', 'A of F 1:7')
-    test('Off Dec 1', 'OD 1')
+    test('Off Dec1', 'OD 1')
     test('ab 3:22,23', 'Abr 3:22-23')
     test('D&C 93:2, 4-6, 17, 5', 'D&C 93:2, 4-6, 17')
     test('1thessa 3: 1, 4, 5 9', '1 Thes 3:1, 4-5, 9')
     test('SecondJohn 1 :15,14,,12', '2 Jn 1:12, 14-15')
     test('Mor oni 10:4- 5', 'Moro 10:4-5')
-    test('gEnesis 1:1', 'Gen 1:1')
+    test('jOb33:1', 'Job 33:1')
+
+
+def test_long_ref():
+    def test(ref, expected):
+        book, chapter, verses = resolve(ref)
+        assert make_long_ref(
+            book, chapter, verses) == expected
+
+    test('Joseph Smith Matthew 1:1-3', 'Joseph Smith - Matthew 1:1-3')
+    test('AOF 1:7', 'Articles of Faith 1:7')
+    test('od1', 'Official Declaration 1')
+    test('mose3:22, 23', 'Moses 3:22-23')
+    test('jOb33:1', 'Job 33:1')
+    test('D&C 93:2, 4-6, 17, 5', 'Doctrine & Covenants 93:2, 4-6, 17')
+    test('1thessa 3: 1, 4, 5 9', '1 Thessalonians 3:1, 4-5, 9')
+    test('SecondJohn 1 :15,14,,12', '2 John 1:12, 14-15')
+    test('Mor oni 10:4- 5', 'Moroni 10:4-5')
+    test('gEnesis1:1', 'Genesis 1:1')

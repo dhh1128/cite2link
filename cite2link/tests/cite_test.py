@@ -12,6 +12,7 @@ def assert_parse(ref, book, chapter, verse):
 
 def test_parse():
     assert_parse("eph  4", 'eph', '4', None)
+    assert_parse("1jn01:06-10", '1jn', '01', '06-10')
     assert_parse("1jn.01:06-10", '1jn.', '01', '06-10')
     assert_parse("Gen 33:1, 3-4", 'Gen', '33', '1, 3-4')
     assert_parse("1 Ne 3:7", '1 Ne', '3', '7')

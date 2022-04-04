@@ -17,7 +17,8 @@ def make_churchofjesuschrist(book, chapter, verses):
 
 def make_abbrev_ref(book, chapter, verses):
     verses = ':' + join_nums_and_pairs(verses, ', ') if verses else ''
-    return f'{book.abbrev_title} {chapter}{verses}'
+    ab = book.abbrev_title if book.abbrev_title else book.title
+    return f'{ab} {chapter}{verses}'
 
 
 def make_long_ref(book, chapter, verses):
