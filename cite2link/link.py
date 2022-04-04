@@ -1,6 +1,15 @@
 from .cite import join_nums_and_pairs
 
+
 cojesuschrist_base = 'https://www.churchofjesuschrist.org/study/scriptures/'
+
+
+def embed_html(ref, inner):
+    return f'<a href="{ref}">{inner}</a>'
+
+
+def embed_markdown(ref, inner):
+    return f'[{inner}]({ref})'
 
 
 def make_churchofjesuschrist(book, chapter, verses):
@@ -15,7 +24,7 @@ def make_churchofjesuschrist(book, chapter, verses):
     return f'{cojesuschrist_base}{book.collection_key}/{book_slug}/{chapter}{verses}?lang=eng{fragment}'
 
 
-def make_abbrev_ref(book, chapter, verses):
+def make_short_ref(book, chapter, verses):
     verses = ':' + join_nums_and_pairs(verses, ', ') if verses else ''
     ab = book.abbrev_title if book.abbrev_title else book.title
     return f'{ab} {chapter}{verses}'
@@ -24,3 +33,25 @@ def make_abbrev_ref(book, chapter, verses):
 def make_long_ref(book, chapter, verses):
     verses = ':' + join_nums_and_pairs(verses, ', ') if verses else ''
     return f'{book.title} {chapter}{verses}'
+
+
+# ------------ keep this block vvv at the bottom of the module --------------
+
+g = globals()
+all_makers = [key for key in g.keys() if key.startswith('make_') and callable(g[key])]
+del g
+
+
+def print_all(book, chapter, verses):
+    g = globals()
+    for key in all_makers:
+        print(key[5:].replace('_', ' '))
+        func = g[key]
+        print('  %s\n' % func(book, chapter, verses))
+
+    print('html\n  ' + embed_html(make_churchofjesuschrist(book, chapter, verses),
+                                  make_short_ref(book, chapter, verses)) + '\n')
+    print('markdown\n  ' + embed_markdown(make_churchofjesuschrist(book, chapter, verses),
+                                  make_short_ref(book, chapter, verses)) + '\n')
+
+# ------------ keep this block ^^^ at the bottom of the module --------------

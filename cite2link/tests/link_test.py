@@ -22,7 +22,7 @@ def test_churchofjesuschrist():
 def test_abbrev_ref():
     def test(ref, expected):
         book, chapter, verses = resolve(ref)
-        assert make_abbrev_ref(
+        assert make_short_ref(
             book, chapter, verses) == expected
 
     test('Joseph Smith --matt 1:17', 'JS-M 1:17')
@@ -52,3 +52,7 @@ def test_long_ref():
     test('SecondJohn 1 :15,14,,12', '2 John 1:12, 14-15')
     test('Mor oni 10:4- 5', 'Moroni 10:4-5')
     test('gEnesis1:1', 'Genesis 1:1')
+
+
+def test_all():
+    print_all(*resolve('Isa 29:14'))
