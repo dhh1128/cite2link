@@ -39,7 +39,7 @@ def resolve(ref):
     if triple:
         book = find_book(triple[0])
         if book:
-            return book, triple[1], normalize_verses(triple[2])
+            return book, triple[1], normalize_verses(triple[2]) if book.chapter_and_verse else None
 
 
 _verse_range_pat = re.compile(r'(\d+)-(\d+)')

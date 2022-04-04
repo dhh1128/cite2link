@@ -113,7 +113,7 @@ book_of_mormon = load('bofm',
 pearl_of_great_price = load('pgp',
     'Moses:Mos/mose,Abraham|abrhm|abrh:Abr/ab,Joseph Smith - Matthew|jsmatthew|jsm|jsmatt|jsmat:JS-M/josephsmithm,' +
     'Joseph Smith - History|jshistory|jsh|jshist|jshis:JS-H/josephsmithh,' +
-    'Articles of Faith!|artoffaith|artfaith|aof|af|aoff:A of F/ar')
+    'Articles of Faith|artoffaith|artfaith|aof|af|aoff:A of F/ar')
 
 doctrine_and_covenants = load('dc-testament',
     'Doctrine & Covenants|doctrineandcovenants|docandcov|dnc|d&c|dc:D&C/do,' +
