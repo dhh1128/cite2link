@@ -13,3 +13,13 @@ def make_churchofjesuschrist(book, chapter, verses):
     else:
         verses = fragment = ''
     return f'{cojesuschrist_base}{book.collection_key}/{book_slug}/{chapter}{verses}?lang=eng{fragment}'
+
+
+def make_abbrev_ref(book, chapter, verses):
+    verses = ':' + join_nums_and_pairs(verses, ', ') if verses else ''
+    return f'{book.abbrev_title} {chapter}{verses}'
+
+
+def make_long_ref(book, chapter, verses):
+    verses = ':' + join_nums_and_pairs(verses, ', ') if verses else ''
+    return f'{book.title} {chapter}{verses}'

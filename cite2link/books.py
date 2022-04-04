@@ -117,7 +117,7 @@ pearl_of_great_price = load('pgp',
 
 doctrine_and_covenants = load('dc-testament',
     'Doctrine & Covenants|doctrineandcovenants|docandcov|dnc|d&c|dc:D&C/do,' +
-    'Official Declaration!|offdec:od/of')
+    'Official Declaration!|offdec:OD/of')
 
 quad = [bible, book_of_mormon, doctrine_and_covenants, pearl_of_great_price]
 
