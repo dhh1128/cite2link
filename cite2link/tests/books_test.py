@@ -25,6 +25,10 @@ def test_ordinal_book():
     assert_book(book_of_mormon[10], 'nephi', '3', 'Ne')
 
 
+def test_book_without_abbrev():
+    assert_book(book_of_mormon[2], 'jacob', None, None)
+
+
 def test_hard_book():
     assert_book(old_testament[21], 'songofsolomon', None, 'Song', 'sos', 'songofsongs', 'canticles')
 

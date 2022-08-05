@@ -56,3 +56,4 @@ def test_long_ref():
 
 def test_all():
     print_all(*resolve('Isa 29:14'))
+    print_all(*resolve('Jac 3:10'))

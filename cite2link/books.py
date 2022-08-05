@@ -70,8 +70,12 @@ class Book:
     def unique_basis(self):
         return self.ordinal + self.names[0] if self.ordinal else self.names[0]
 
-    def __str__(self):
+    @property
+    def slug(self):
         return self.abbrev_title if self.abbrev_title else self.title
+
+    def __str__(self):
+        return self.slug
 
 
 def load(collection_key, definitions):
