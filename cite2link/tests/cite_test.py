@@ -18,6 +18,15 @@ def test_parse():
     assert_parse("1 Ne 3:7", '1 Ne', '3', '7')
 
 
+def test_parse_gc():
+    assert_parse("april2006 wood:instruments", "a06", "wood", "instruments")
+    assert_parse("OCTOB '96 nelson: Spirit of God", "O96", "nelson", "Spirit of God")
+    assert_parse("o2013.bednar", "o13", "bednar", None)
+    assert_parse("Apr20,holland ,songs", "A20", "holland", "songs")
+    assert_parse("Oct_17/O'Rourke;It's crazy--but oh well!", "O17", "O'Rourke", "It's crazy--but oh well!")
+    assert_parse("aP00; José de la Peña:Martí", "a00", "José de la Peña", "Martí")
+
+
 def assert_norm(input, output):
     assert join_nums_and_pairs(normalize_verses(input)) == output
 

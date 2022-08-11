@@ -16,6 +16,16 @@ scripture_cite_pat = re.compile(r"""
 )
 
 
+gc_cit_pat = re.compile(r"""
+    (a[pril]*|o[ctober]*)[, -.'_]*(?:19|20)?(\d{2}) # which General Conference and year
+    \W+
+    ((?:\w|[ '-])+) # author surname (supports unicode)
+    (?: # everything after surname is optional
+    [ :,;]+(.*) # delim, then author given name and/or initial(s) and/or title keywords
+    )? # end of optional part
+    """, re.I | re.VERBOSE | re.U)
+
+
 def parse(ref):
     """
     See if a scriptural reference can be recognized as matching a standard format.
@@ -24,6 +34,9 @@ def parse(ref):
     is valid or the chapter and verse portion make sense. It is probably more common
     for external callers to use resolve() instead, as this does a book lookup.
     """
+    m = gc_cit_pat.match(ref)
+    if m:
+        return m.group(1)[0] + m.group(2), m.group(3).rstrip(), m.group(4)
     m = scripture_cite_pat.match(ref)
     if m:
         return m.group(1), m.group(2), m.group(3)

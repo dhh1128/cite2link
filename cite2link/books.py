@@ -25,7 +25,7 @@ class Book:
         # Parse the rest of the expression
         m = defn_pat.match(defn)
         # If we've been given a precalculated string that's
-        # the minumum prefix to make this name unique,
+        # the minimum prefix to make this name unique,
         # record that.
         if m.group(3):
             self.unique = m.group(3)
