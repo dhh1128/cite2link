@@ -61,4 +61,5 @@ jobs:
         # also proves the lockfile is current. --python pins the matrix version
         # (uv fetches a standalone interpreter as needed), so this is the proof
         # that the >=3.10 floor actually holds.
-        run: uv run --locked --python "${{ matrix.python-version }}" pytest --cov --cov-report=term-missing
+        # Coverage (with the fail_under floor) runs via addopts in pyproject.
+        run: uv run --locked --python "${{ matrix.python-version }}" pytest

@@ -117,3 +117,8 @@ def test_books_not_found():
     assert find_book("gesxyz") is None
     # Partial name that isn't canonical and therefore not truncatable
     assert find_book("Cantic") is None
+
+
+def test_book_str_is_its_slug():
+    genesis = find_book("Genesis")
+    assert str(genesis) == genesis.slug == "Gen"

@@ -69,7 +69,7 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra --strict-markers"
+addopts = "-ra --strict-markers --cov --cov-report=term-missing"
 
 [tool.coverage.run]
 branch = true
@@ -78,6 +78,9 @@ source = ["cite2link"]
 omit = ["*/cite2link/gc.py"]
 
 [tool.coverage.report]
+# The core modules are fully covered; hold the line a little below 100 so a
+# trivial future edit doesn't fail CI before its test lands.
+fail_under = 95
 exclude_also = [
     "if __name__ == .__main__.:",
     "raise NotImplementedError",

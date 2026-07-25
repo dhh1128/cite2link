@@ -34,6 +34,25 @@ def test_parse_gc():
     assert_parse("aP00; José de la Peña:Martí", "a00", "José de la Peña", "Martí", allow_gc=True)
 
 
+def test_parse_returns_none_for_unparseable():
+    assert parse("this is not a citation") is None
+
+
+def test_parse_allow_gc_falls_through_to_scripture():
+    # allow_gc=True but the text isn't a GC citation, so it still parses as
+    # scripture rather than being swallowed by the GC branch.
+    assert parse("Genesis 1:1", allow_gc=True) == ("Genesis", "1", "1")
+
+
+def test_resolve_unparseable_returns_none():
+    assert resolve("this is not a citation") is None
+
+
+def test_resolve_unknown_book_returns_none():
+    # Parses fine as a citation shape, but the book is not in the library.
+    assert resolve("Nonexistent 3:4") is None
+
+
 def test_parse_gc_off_by_default():
     # Without allow_gc, a GC-style citation must not be treated as one; it falls
     # through to the scripture matcher (which yields a different shape) or None.

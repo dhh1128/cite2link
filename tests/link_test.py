@@ -1,5 +1,6 @@
 from cite2link.cite import resolve
 from cite2link.link import *
+from cite2link.link import _styles
 
 
 def test_churchofjesuschrist():
@@ -57,3 +58,30 @@ def test_long_ref():
 def test_all():
     print_all(*resolve("Isa 29:14"))
     print_all(*resolve("Jac 3:10"))
+
+
+def test_embed_helpers():
+    assert embed_html("http://x", "Y") == '<a href="http://x">Y</a>'
+    assert embed_markdown("http://x", "Y") == "[Y](http://x)"
+
+
+def test_registry_lists_every_style_in_definition_order():
+    labels = [label for label, _ in _styles]
+    assert labels == ["churchofjesuschrist", "short ref", "long ref"]
+
+
+def test_print_all_emits_every_style(capsys):
+    print_all(*resolve("Gen 1:1"))
+    out = capsys.readouterr().out
+    for section in ("churchofjesuschrist", "short ref", "long ref", "html", "markdown"):
+        assert section in out
+    # Book without a #p fragment on verse 1.
+    assert "ot/gen/1.1?lang=eng" in out
+
+
+def test_book_without_verses_omits_verse_text(capsys):
+    # Official Declaration is cited without chapter/verse.
+    print_all(*resolve("Official Declaration 2"))
+    out = capsys.readouterr().out
+    assert "dc-testament/od/2?lang=eng" in out
+    assert "short ref\n  OD 2" in out
