@@ -166,6 +166,9 @@ _lead_ordinal_pat = re.compile(
 
 def find_book(book_name_in_ref: str) -> Book | None:
     """Find the book matching the given name via fuzzy matching, or None."""
+    # ~636r Known ambiguity: "Mos" is Moses's canonical abbreviation, so the
+    # exact-name/abbrev match below returns Moses before the unique-prefix logic
+    # can consider Mosiah. "Mos 3" meant as Mosiah silently resolves to Moses.
     # Normalize punctuation in what we were given.
     if "&" in book_name_in_ref:
         book_name_in_ref = (
