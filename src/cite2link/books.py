@@ -1,11 +1,11 @@
 import re
 
-defn_pat = re.compile(r'\s*([^:/]+)(?::\s*([A-Za-z- &]+))?(?:/\s*([1-4a-z]+))?\s*')
+defn_pat = re.compile(r"\s*([^:/]+)(?::\s*([A-Za-z- &]+))?(?:/\s*([1-4a-z]+))?\s*")
 
 
 def _purify_name_chars(name):
     name = name.lower()
-    return ''.join([c for c in name if c.isalpha() or c.isdigit()])
+    return "".join([c for c in name if c.isalpha() or c.isdigit()])
 
 
 class Book:
@@ -40,15 +40,15 @@ class Book:
             if not self.unique:
                 self.unique = ab
         # Split all remaining names.
-        names = m.group(1).split('|')
+        names = m.group(1).split("|")
         # Notice if this is a book that doesn't have both chapter
         # and verse.
-        if names[0].endswith('!'):
+        if names[0].endswith("!"):
             self.chapter_and_verse = False
             names[0] = names[0][:-1]
         # Record the canonical title. This value can have spaces
         # and capitals.
-        self.title = self.ordinal + ' ' + names[0] if self.ordinal else names[0]
+        self.title = self.ordinal + " " + names[0] if self.ordinal else names[0]
         # Remove spaces, punct, and lower case all the names.
         self.names = [_purify_name_chars(item) for item in names]
         if ab and ab not in self.names:
@@ -64,7 +64,7 @@ class Book:
     @property
     def abbrev_title(self):
         if self.abbrev:
-            return self.ordinal + ' ' + self.abbrev if self.ordinal else self.abbrev
+            return self.ordinal + " " + self.abbrev if self.ordinal else self.abbrev
 
     @property
     def unique_basis(self):
@@ -79,7 +79,7 @@ class Book:
 
 
 def load(collection_key, definitions):
-    return [Book(item, collection_key) for item in definitions.split(',')]
+    return [Book(item, collection_key) for item in definitions.split(",")]
 
 
 # Define collections of books. Each item is in the format:
@@ -91,37 +91,47 @@ def load(collection_key, definitions):
 # a book ends with !, this means the book doesn't have
 # both chapter and verse (it's cited with a single number).
 
-old_testament = load('ot',
-    'Genesis|gs|gn:Gen/ge,Exodus:Ex,Leviticus:Lev/le,Numbers|nbrs:Num/nu,Deuteronomy:Deut/de,Joshua:Josh,' +
-    'Judges:Judg,Ruth/ru,1 Samuel:Sam/1sa,2 Samuel:Sam/2sa,1 Kings|kngs:Kgs/1ki,2 Kings|kngs:Kgs/2ki,' +
-    '1 Chronicles|chrn:Chr/1ch,2 Chronicles|chrn:Chr/2ch,Ezra/ezr,Nehemiah:Neh/ne,Esther:Esth/es,Job,' +
-    'Psalms|psal:Ps,Proverbs|prvbs|prvb:Prov/pr,Ecclesiastes:Eccl/ec,' +
-    'Song of Solomon|songofsongs|canticles|cant|sos|ss:Song/so,Isaiah:Isa/is,Jeremiah:Jer/je,' +
-    'Lamentations:Lam/la,Ezekiel:Ezek/eze,Daniel:Dan/da,Hosea/ho,Joel/joe,Amos/am,' +
-    'Obadiah:Obad/ob,Jonah|jnh/jon,Micah/mi,Nahum/na,Habakkuk:Hab,Zephaniah:Zeph/zep,Haggai|hagai:Hag,' +
-    'Zechariah:Zech/zec,Malachi:Mal')
+old_testament = load(
+    "ot",
+    "Genesis|gs|gn:Gen/ge,Exodus:Ex,Leviticus:Lev/le,Numbers|nbrs:Num/nu,Deuteronomy:Deut/de,Joshua:Josh,"
+    + "Judges:Judg,Ruth/ru,1 Samuel:Sam/1sa,2 Samuel:Sam/2sa,1 Kings|kngs:Kgs/1ki,2 Kings|kngs:Kgs/2ki,"
+    + "1 Chronicles|chrn:Chr/1ch,2 Chronicles|chrn:Chr/2ch,Ezra/ezr,Nehemiah:Neh/ne,Esther:Esth/es,Job,"
+    + "Psalms|psal:Ps,Proverbs|prvbs|prvb:Prov/pr,Ecclesiastes:Eccl/ec,"
+    + "Song of Solomon|songofsongs|canticles|cant|sos|ss:Song/so,Isaiah:Isa/is,Jeremiah:Jer/je,"
+    + "Lamentations:Lam/la,Ezekiel:Ezek/eze,Daniel:Dan/da,Hosea/ho,Joel/joe,Amos/am,"
+    + "Obadiah:Obad/ob,Jonah|jnh/jon,Micah/mi,Nahum/na,Habakkuk:Hab,Zephaniah:Zeph/zep,Haggai|hagai:Hag,"
+    + "Zechariah:Zech/zec,Malachi:Mal",
+)
 
-new_testament = load('nt',
-    'Matthew|mathew:Matt/mat,Mark/mar,Luke/lu,John/joh,Acts/ac,Romans:Rom/ro,1 Corinthians|crnth:Cor/1co,' +
-    '2 Corinthians|crnth:Cor/2co,Galatians|gltn:Gal/ga,Ephesians|ephs:Eph/ep,Philippians|phlp|phillipians:Philip/phili,' +
-    'Colossians|cls:Col/co,1 Thessalonians:Thes/1th,2 Thessalonians:Thes/2th,1 Timothy:Tim/1ti,2 Timothy:Tim/2ti,' +
-    'Titus/ti,Philemon:Philem/phile,Hebrews:Heb,James/jam,1 Peter:Pet/1pe,2 Peter:Pet/2pe,1 John:Jn/1jo,' +
-    '2 John:Jn/2jo,3 John:Jn/3jo,Jude,Revelation|apocalypse:Rev/re')
+new_testament = load(
+    "nt",
+    "Matthew|mathew:Matt/mat,Mark/mar,Luke/lu,John/joh,Acts/ac,Romans:Rom/ro,1 Corinthians|crnth:Cor/1co,"
+    + "2 Corinthians|crnth:Cor/2co,Galatians|gltn:Gal/ga,Ephesians|ephs:Eph/ep,Philippians|phlp|phillipians:Philip/phili,"
+    + "Colossians|cls:Col/co,1 Thessalonians:Thes/1th,2 Thessalonians:Thes/2th,1 Timothy:Tim/1ti,2 Timothy:Tim/2ti,"
+    + "Titus/ti,Philemon:Philem/phile,Hebrews:Heb,James/jam,1 Peter:Pet/1pe,2 Peter:Pet/2pe,1 John:Jn/1jo,"
+    + "2 John:Jn/2jo,3 John:Jn/3jo,Jude,Revelation|apocalypse:Rev/re",
+)
 
 bible = [old_testament, new_testament]
 
-book_of_mormon = load('bofm',
-    '1 Nephi:Ne/1ne,2 Nephi:Ne/2ne,Jacob/jac,Enos/en,Jarom/jar,Omni/om,Words of Mormon|wm|wom:W of M/wo,' +
-    'Mosiah/mosi,Alma/al,Helaman:Hel,3 Nephi:Ne/3ne,4 Nephi:Ne/4ne,Mormon:Morm,Ether/et,Moroni:Moro')
+book_of_mormon = load(
+    "bofm",
+    "1 Nephi:Ne/1ne,2 Nephi:Ne/2ne,Jacob/jac,Enos/en,Jarom/jar,Omni/om,Words of Mormon|wm|wom:W of M/wo,"
+    + "Mosiah/mosi,Alma/al,Helaman:Hel,3 Nephi:Ne/3ne,4 Nephi:Ne/4ne,Mormon:Morm,Ether/et,Moroni:Moro",
+)
 
-pearl_of_great_price = load('pgp',
-    'Moses:Mos/mose,Abraham|abrhm|abrh:Abr/ab,Joseph Smith - Matthew|jsmatthew|jsm|jsmatt|jsmat:JS-M/josephsmithm,' +
-    'Joseph Smith - History|jshistory|jsh|jshist|jshis:JS-H/josephsmithh,' +
-    'Articles of Faith|artoffaith|artfaith|aof|af|aoff:A of F/ar')
+pearl_of_great_price = load(
+    "pgp",
+    "Moses:Mos/mose,Abraham|abrhm|abrh:Abr/ab,Joseph Smith - Matthew|jsmatthew|jsm|jsmatt|jsmat:JS-M/josephsmithm,"
+    + "Joseph Smith - History|jshistory|jsh|jshist|jshis:JS-H/josephsmithh,"
+    + "Articles of Faith|artoffaith|artfaith|aof|af|aoff:A of F/ar",
+)
 
-doctrine_and_covenants = load('dc-testament',
-    'Doctrine & Covenants|doctrineandcovenants|docandcov|dnc|d&c|dc:D&C/do,' +
-    'Official Declaration!|offdec:OD/of')
+doctrine_and_covenants = load(
+    "dc-testament",
+    "Doctrine & Covenants|doctrineandcovenants|docandcov|dnc|d&c|dc:D&C/do,"
+    + "Official Declaration!|offdec:OD/of",
+)
 
 quad = [bible, book_of_mormon, doctrine_and_covenants, pearl_of_great_price]
 
@@ -134,10 +144,12 @@ def normalize_ordinal(ordinal):
     """
     Given a string like "first" or "1st" or "1", return the canonical version ('1').
     """
-    return ordinal[0] if ordinal[0].isdigit() else str('ieho'.index(ordinal[1].lower()) + 1)
+    return ordinal[0] if ordinal[0].isdigit() else str("ieho".index(ordinal[1].lower()) + 1)
 
 
-_lead_ordinal_pat = re.compile(r'(first|1(?:st)?|sec(?:ond)?|2(?:nd)?|third|3(?:rd)?|fourth|4(?:th)?)\s*(.*)', re.I)
+_lead_ordinal_pat = re.compile(
+    r"(first|1(?:st)?|sec(?:ond)?|2(?:nd)?|third|3(?:rd)?|fourth|4(?:th)?)\s*(.*)", re.I
+)
 
 
 def find_book(book_name_in_ref):
@@ -146,19 +158,20 @@ def find_book(book_name_in_ref):
     Do fuzzy matching. Return the matching book if found, else None.
     """
     # Normalize punctuation in what we were given.
-    if '&' in book_name_in_ref:
-        book_name_in_ref = book_name_in_ref.replace(
-            '&amp;', '&').replace(
-            '&mdash;','-').replace(
-            '&#151;', '-').replace(
-            '&ndash;', '-').replace(
-            '&#150;', '-')
+    if "&" in book_name_in_ref:
+        book_name_in_ref = (
+            book_name_in_ref.replace("&amp;", "&")
+            .replace("&mdash;", "-")
+            .replace("&#151;", "-")
+            .replace("&ndash;", "-")
+            .replace("&#150;", "-")
+        )
     # Normalize stuff like "First Chron" and "3rd Esdras"
     m = _lead_ordinal_pat.match(book_name_in_ref)
-    if m: # Transform into "1 Chron" or "3 Esdras" for lookup
+    if m:  # Transform into "1 Chron" or "3 Esdras" for lookup
         book_name_in_ref = normalize_ordinal(m.group(1)) + m.group(2)
-    named = Book(book_name_in_ref, '')       # imagine book_name_in_ref = "1 Chron."
-    name = named.names[0]                    # "chron"
+    named = Book(book_name_in_ref, "")  # imagine book_name_in_ref = "1 Chron."
+    name = named.names[0]  # "chron"
     first_char = name[0]
     # If we wanted to optimize this, we could build a dict of lists of books,
     # indexed by the first letter of their names. This would allow us to skip
@@ -200,6 +213,4 @@ def next_book(container):
             yield item
         else:
             # Recurse
-            for book in next_book(item):
-                yield book
-
+            yield from next_book(item)

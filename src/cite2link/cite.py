@@ -2,8 +2,8 @@ import re
 
 from .books import find_book
 
-
-scripture_cite_pat = re.compile(r"""
+scripture_cite_pat = re.compile(
+    r"""
     ((?:first|1(?:st)?|sec(?:ond)?|2(?:nd)?|third|3(?:rd)?|fourth|4(?:th)?)?\s* # leading volume
     (?:[a-z&.-]+(?:\ +[a-z&.-]+)*)) # book/author, cap group 1
     \W*
@@ -12,18 +12,22 @@ scripture_cite_pat = re.compile(r"""
     \s*:\s*
     ([-0-9,\ ]+) # verses, cap group 3
     )? # end of optional part
-    """, re.I | re.VERBOSE
+    """,
+    re.I | re.VERBOSE,
 )
 
 
-gc_cit_pat = re.compile(r"""
+gc_cit_pat = re.compile(
+    r"""
     (a[pril]*|o[ctober]*)[, -.'_]*(?:19|20)?(\d{2}) # which General Conference and year
     \W+
     ((?:\w|[ '-])+) # author surname (supports unicode)
     (?: # everything after surname is optional
     [ :,;]+(.*) # delim, then author given name and/or initial(s) and/or title keywords
     )? # end of optional part
-    """, re.I | re.VERBOSE | re.U)
+    """,
+    re.I | re.VERBOSE | re.U,
+)
 
 
 def parse(ref):
@@ -55,17 +59,17 @@ def resolve(ref):
             return book, triple[1], normalize_verses(triple[2]) if book.chapter_and_verse else None
 
 
-_verse_range_pat = re.compile(r'(\d+)-(\d+)')
-_verse_splitter_pat = re.compile(r'[ ,]+')
-_space_range_pat = re.compile(r' +-')
-_range_space_pat = re.compile(r'- +')
+_verse_range_pat = re.compile(r"(\d+)-(\d+)")
+_verse_splitter_pat = re.compile(r"[ ,]+")
+_space_range_pat = re.compile(r" +-")
+_range_space_pat = re.compile(r"- +")
 
 
 def split_verses(verses):
     """
     Split on any runs of commas and spaces. Remove spaces.
     """
-    verses = _verse_splitter_pat.split(_range_space_pat.sub('-', _space_range_pat.sub('-', verses)))
+    verses = _verse_splitter_pat.split(_range_space_pat.sub("-", _space_range_pat.sub("-", verses)))
     return [v for v in verses if v]
 
 
@@ -83,19 +87,19 @@ def get_nums_and_pairs_from_verses_text(verses):
         if m:
             pair = (int(m.group(1)), int(m.group(2)))
             if pair[0] > pair[1]:
-                raise Exception('Bad range "%s"; %s > %s.' % (item, m.group(1), m.group(2)))
+                raise ValueError(f'Bad range "{item}"; {m.group(1)} > {m.group(2)}.')
             items.append(pair)
         else:
             items.append(int(item))
     return items
 
 
-def join_nums_and_pairs(verses, joiner=', '):
+def join_nums_and_pairs(verses, joiner=", "):
     """
     Given an array of ints and int pairs, return a single string
     of individual verse numbers and verse ranges: [3,5,(7,10)] --> "3, 5, 7-10".
     """
-    return joiner.join([str(x) if isinstance(x, int) else '%d-%d' % x for x in verses])
+    return joiner.join([str(x) if isinstance(x, int) else f"{x[0]}-{x[1]}" for x in verses])
 
 
 def normalize_verses(verses):
