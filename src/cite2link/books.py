@@ -148,6 +148,9 @@ doctrine_and_covenants = _load(
 
 quad = [bible, book_of_mormon, doctrine_and_covenants, pearl_of_great_price]
 
+# ~4r6w Future: pluggable collections of other canonical corpora (e.g.
+# Shakespeare, Bartlett's Quotations). ~6y6q Future: add the Apocrypha as a
+# book collection.
 library = quad
 
 

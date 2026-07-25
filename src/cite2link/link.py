@@ -13,6 +13,9 @@ from collections.abc import Callable
 from .books import Book
 from .cite import Verse, join_nums_and_pairs
 
+# ~6aid Future: alternate link targets besides churchofjesuschrist.org (e.g.
+# blueletterbible.com, biblehub.com). ~4fll Future: support Bible editions /
+# translations (KJV vs NLT, ...) as another dimension of the generated link.
 cojesuschrist_base = "https://www.churchofjesuschrist.org/study/scriptures/"
 
 # (label, maker) pairs, in definition order. Populated by @citation_style.

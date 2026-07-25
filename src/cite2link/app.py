@@ -13,6 +13,8 @@ from .link import print_all
 
 
 def build_parser() -> argparse.ArgumentParser:
+    # ~5np2 Future: default to emitting a naked URL, with --md/--html (etc.)
+    # flags to opt into the extra renderings that print_all currently shows.
     parser = argparse.ArgumentParser(
         prog="cite2link",
         description="Convert a scripture citation into hyperlinks "
