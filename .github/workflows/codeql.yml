@@ -14,13 +14,20 @@ permissions:
 
 jobs:
   analyze:
-    name: Analyze (python)
+    name: Analyze (${{ matrix.language }})
     runs-on: ubuntu-latest
     permissions:
       # Writing the analysis results back to the Security tab needs these.
       security-events: write
       actions: read
       contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # python: the library and scripts. actions: the workflow files
+        # themselves (checks for injection, over-broad permissions, unpinned
+        # or vulnerable action usage, etc.).
+        language: [python, actions]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -29,8 +36,10 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81  # v4
         with:
-          languages: python
+          languages: ${{ matrix.language }}
           queries: security-and-quality
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81  # v4
+        with:
+          category: "/language:${{ matrix.language }}"
