@@ -1,5 +1,9 @@
 # cite2link
 
+[![CI](https://github.com/dhh1128/cite2link/actions/workflows/ci.yml/badge.svg)](https://github.com/dhh1128/cite2link/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/dhh1128/cite2link/actions/workflows/codeql.yml/badge.svg)](https://github.com/dhh1128/cite2link/actions/workflows/codeql.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
 Convert scripture citations like `John 3:15` — and other canonical-source
 references — into hyperlinks in several formats (a canonical
 churchofjesuschrist.org URL, normalized short/long references, HTML, and
