@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+# Least privilege: CI only reads the checked-out code. No job needs write.
+permissions:
+  contents: read
+
+# Actions are pinned to full commit SHAs (a mutable @vN tag can be silently
+# retargeted — the tj-actions class of attack). The trailing "# vN.N.N" comment
+# is what humans and Dependabot read; Dependabot bumps the SHA and the comment
+# together. persist-credentials: false so the checkout token isn't left on disk.
+jobs:
+  # Reject invisible / Trojan-Source Unicode (GlassWorm & bidi-reorder classes)
+  # before anything else runs. python3 ships on the runner, so no install step.
+  unicode-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Scan for invisible / Trojan-Source Unicode
+        run: python3 scripts/check_unicode.py
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+        with:
+          enable-cache: true
+      - name: Ruff lint
+        run: uv run --locked ruff check .
+      - name: Ruff format check
+        run: uv run --locked ruff format --check .
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+        with:
+          enable-cache: true
+
+      - name: Run tests
+        # --locked fails if uv.lock is out of date with pyproject.toml, so CI
+        # also proves the lockfile is current. --python pins the matrix version
+        # (uv fetches a standalone interpreter as needed), so this is the proof
+        # that the >=3.10 floor actually holds.
+        run: uv run --locked --python "${{ matrix.python-version }}" pytest --cov --cov-report=term-missing

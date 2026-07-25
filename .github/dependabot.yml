@@ -1,0 +1,25 @@
+version: 2
+
+updates:
+  # GitHub Actions used by the CI, CodeQL, and release workflows. Actions are
+  # pinned to full commit SHAs; Dependabot bumps each SHA and its "# vN.N.N"
+  # comment together. Group all action bumps into a single PR so a weekly batch
+  # of SHA updates doesn't fan out into one PR per action.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "github-actions"]
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # Python dependencies. Use the native "uv" ecosystem: it regenerates uv.lock
+  # alongside pyproject.toml, keeping the lockfile in sync (the "pip" ecosystem
+  # updates pyproject.toml but leaves uv.lock stale, which fails CI's --locked
+  # check).
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "python"]
