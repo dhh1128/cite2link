@@ -1,3 +1,8 @@
+# ~4g46 UNFINISHED + INERT. This General Conference talk finder is not wired
+# into the CLI and is not reachable through resolve(); GC-citation parsing is
+# opt-in (cite.parse(..., allow_gc=True)). find_talk() only fetches raw search
+# HTML — it does not yet extract the canonical talk URL — and has no live test.
+# `requests` is an opt-in [gc] extra. See the tick for what remains to finish.
 from urllib.parse import urlencode
 
 talk_finder_url_template = "https://duckduckgo.com/?{q}&va=j&t=hc&ia=web"

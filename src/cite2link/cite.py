@@ -30,17 +30,23 @@ gc_cit_pat = re.compile(
 )
 
 
-def parse(ref):
+def parse(ref, allow_gc=False):
     """
     See if a scriptural reference can be recognized as matching a standard format.
     If yes, return a tuple of (book_name, chapter, verses). If no, return None.
     This does syntactic analysis only; it makes no attempt to see if the book name
     is valid or the chapter and verse portion make sense. It is probably more common
     for external callers to use resolve() instead, as this does a book lookup.
+
+    ~4g46 The General Conference talk finder (cite2link.gc) is unfinished and
+    inert. GC-citation parsing is therefore opt-in via allow_gc: off by default
+    so it can never shadow scripture parsing on the normal path (resolve() never
+    enables it). See the tick for what remains to finish the feature.
     """
-    m = gc_cit_pat.match(ref)
-    if m:
-        return m.group(1)[0] + m.group(2), m.group(3).rstrip(), m.group(4)
+    if allow_gc:
+        m = gc_cit_pat.match(ref)
+        if m:
+            return m.group(1)[0] + m.group(2), m.group(3).rstrip(), m.group(4)
     m = scripture_cite_pat.match(ref)
     if m:
         return m.group(1), m.group(2), m.group(3)

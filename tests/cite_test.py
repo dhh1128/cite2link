@@ -3,8 +3,8 @@ from pytest import raises
 from cite2link.cite import *
 
 
-def assert_parse(ref, book, chapter, verse):
-    b, ch, v = parse(ref)
+def assert_parse(ref, book, chapter, verse, allow_gc=False):
+    b, ch, v = parse(ref, allow_gc=allow_gc)
     assert b == book
     assert ch == chapter
     assert v == verse
@@ -19,14 +19,25 @@ def test_parse():
 
 
 def test_parse_gc():
-    assert_parse("april2006 wood:instruments", "a06", "wood", "instruments")
-    assert_parse("OCTOB '96 nelson: Spirit of God", "O96", "nelson", "Spirit of God")
-    assert_parse("o2013.bednar", "o13", "bednar", None)
-    assert_parse("Apr20,holland ,songs", "A20", "holland", "songs")
+    # ~4g46 GC-citation parsing is inert/opt-in; exercise it via allow_gc=True.
+    assert_parse("april2006 wood:instruments", "a06", "wood", "instruments", allow_gc=True)
+    assert_parse("OCTOB '96 nelson: Spirit of God", "O96", "nelson", "Spirit of God", allow_gc=True)
+    assert_parse("o2013.bednar", "o13", "bednar", None, allow_gc=True)
+    assert_parse("Apr20,holland ,songs", "A20", "holland", "songs", allow_gc=True)
     assert_parse(
-        "Oct_17/O'Rourke;It's crazy--but oh well!", "O17", "O'Rourke", "It's crazy--but oh well!"
+        "Oct_17/O'Rourke;It's crazy--but oh well!",
+        "O17",
+        "O'Rourke",
+        "It's crazy--but oh well!",
+        allow_gc=True,
     )
-    assert_parse("aP00; José de la Peña:Martí", "a00", "José de la Peña", "Martí")
+    assert_parse("aP00; José de la Peña:Martí", "a00", "José de la Peña", "Martí", allow_gc=True)
+
+
+def test_parse_gc_off_by_default():
+    # Without allow_gc, a GC-style citation must not be treated as one; it falls
+    # through to the scripture matcher (which yields a different shape) or None.
+    assert parse("o2013.bednar") != ("o13", "bednar", None)
 
 
 def assert_norm(input, output):
