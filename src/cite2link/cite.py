@@ -1,6 +1,19 @@
+"""Parse and normalize citation text.
+
+The pipeline is: ``parse()`` recognizes the shape of a citation string,
+``resolve()`` turns it into a concrete :class:`~cite2link.books.Book` plus a
+normalized verse list, and the ``*_verses`` helpers do the verse arithmetic.
+"""
+
+from __future__ import annotations
+
 import re
 
-from .books import find_book
+from .books import Book, find_book
+from .errors import BadVerseRange
+
+# A single verse (an int) or an inclusive verse range (a start/end pair).
+Verse = int | tuple[int, int]
 
 scripture_cite_pat = re.compile(
     r"""
@@ -30,18 +43,18 @@ gc_cit_pat = re.compile(
 )
 
 
-def parse(ref, allow_gc=False):
-    """
-    See if a scriptural reference can be recognized as matching a standard format.
-    If yes, return a tuple of (book_name, chapter, verses). If no, return None.
-    This does syntactic analysis only; it makes no attempt to see if the book name
-    is valid or the chapter and verse portion make sense. It is probably more common
-    for external callers to use resolve() instead, as this does a book lookup.
+def parse(ref: str, allow_gc: bool = False) -> tuple[str, str, str | None] | None:
+    """Recognize a reference as matching a standard citation format.
+
+    Returns a ``(book_name, chapter, verses)`` tuple of raw strings if the shape
+    is recognized, else ``None``. This is syntactic analysis only: it does not
+    check that the book name is valid or that the chapter/verse portion makes
+    sense. Most callers want :func:`resolve`, which also looks the book up.
 
     ~4g46 The General Conference talk finder (cite2link.gc) is unfinished and
-    inert. GC-citation parsing is therefore opt-in via allow_gc: off by default
-    so it can never shadow scripture parsing on the normal path (resolve() never
-    enables it). See the tick for what remains to finish the feature.
+    inert. GC-citation parsing is therefore opt-in via ``allow_gc``: off by
+    default so it can never shadow scripture parsing on the normal path
+    (:func:`resolve` never enables it). See the tick for what remains.
     """
     if allow_gc:
         m = gc_cit_pat.match(ref)
@@ -50,19 +63,25 @@ def parse(ref, allow_gc=False):
     m = scripture_cite_pat.match(ref)
     if m:
         return m.group(1), m.group(2), m.group(3)
+    return None
 
 
-def resolve(ref):
-    """
-    Given a reference, see if it can be resolved to something that our library knows about.
-    If yes, return a tuple of (book, chapter, verses), where book is an actual Book object,
-    and verses is an array of normalized ints and int pairs (ranges). If no, return None.
+def resolve(ref: str) -> tuple[Book, str, list[Verse] | None] | None:
+    """Resolve a reference to something this library knows about.
+
+    Returns ``(book, chapter, verses)`` — where ``book`` is a :class:`Book`, and
+    ``verses`` is a list of normalized ints and int pairs (or ``None`` for books
+    cited without verses) — or ``None`` if the reference cannot be parsed or the
+    book is unknown. Raises :class:`BadVerseRange` if the verse text is malformed.
     """
     triple = parse(ref)
-    if triple:
-        book = find_book(triple[0])
-        if book:
-            return book, triple[1], normalize_verses(triple[2]) if book.chapter_and_verse else None
+    if not triple:
+        return None
+    book = find_book(triple[0])
+    if not book:
+        return None
+    verses = normalize_verses(triple[2]) if book.chapter_and_verse else None
+    return book, triple[1], verses
 
 
 _verse_range_pat = re.compile(r"(\d+)-(\d+)")
@@ -71,85 +90,82 @@ _space_range_pat = re.compile(r" +-")
 _range_space_pat = re.compile(r"- +")
 
 
-def split_verses(verses):
-    """
-    Split on any runs of commas and spaces. Remove spaces.
-    """
+def split_verses(verses: str) -> list[str]:
+    """Split verse text on runs of commas and spaces, dropping empties."""
     verses = _verse_splitter_pat.split(_range_space_pat.sub("-", _space_range_pat.sub("-", verses)))
     return [v for v in verses if v]
 
 
-def get_nums_and_pairs_from_verses_text(verses):
+def _to_int(token: str) -> int:
+    """Parse a verse number, raising :class:`BadVerseRange` on non-numeric text."""
+    try:
+        return int(token)
+    except ValueError:
+        raise BadVerseRange(f'Not a verse number: "{token}".') from None
+
+
+def get_nums_and_pairs_from_verses_text(verses: list[str]) -> list[Verse]:
+    """Convert verse/range strings to ints and int pairs.
+
+    ``'3', '5', '7-10'`` --> ``[3, 5, (7, 10)]``. Raises :class:`BadVerseRange`
+    for a descending range or a non-numeric token.
     """
-    Given an array of strings that describe either individual verses
-    or ranges of verses, return an array of corresponding ints and
-    int pairs: '3','5', '7-10' --> [3,5,(7,10)]
-    """
-    items = []
-    # Get components -- either individual verses, or verse ranges.
-    # Convert them to integers or tuples that hold integer pairs.
+    items: list[Verse] = []
     for item in verses:
         m = _verse_range_pat.match(item)
         if m:
             pair = (int(m.group(1)), int(m.group(2)))
             if pair[0] > pair[1]:
-                raise ValueError(f'Bad range "{item}"; {m.group(1)} > {m.group(2)}.')
+                raise BadVerseRange(f'Bad range "{item}"; {m.group(1)} > {m.group(2)}.')
             items.append(pair)
         else:
-            items.append(int(item))
+            items.append(_to_int(item))
     return items
 
 
-def join_nums_and_pairs(verses, joiner=", "):
-    """
-    Given an array of ints and int pairs, return a single string
-    of individual verse numbers and verse ranges: [3,5,(7,10)] --> "3, 5, 7-10".
-    """
-    return joiner.join([str(x) if isinstance(x, int) else f"{x[0]}-{x[1]}" for x in verses])
+def join_nums_and_pairs(verses: list[Verse], joiner: str = ", ") -> str:
+    """Join ints and int pairs into text: ``[3, 5, (7, 10)]`` --> ``"3, 5, 7-10"``."""
+    return joiner.join(str(x) if isinstance(x, int) else f"{x[0]}-{x[1]}" for x in verses)
 
 
-def normalize_verses(verses):
+def normalize_verses(verses: str) -> list[Verse]:
+    """Put verses into canonical form.
+
+    Ordered, with no redundancies or overlaps, and with maximum use of ranges
+    for terseness. Returns a list of ints and int pairs; call
+    :func:`join_nums_and_pairs` to render it as text.
     """
-    Put verses in a canonical format -- ordered, with no redundancies or overlaps,
-    and with maximum use of ranges for terseness. Return an array of ints and
-    int pairs. To convert to text, call join_nums_and_pairs().
-    """
-    verses = split_verses(verses)
-    nums_and_pairs = get_nums_and_pairs_from_verses_text(verses)
-    # Sort them.
-    verses = sorted(nums_and_pairs, key=lambda x: x if isinstance(x, int) else x[0])
-    # Now go through the verses and look for redundancies, overlaps, or
-    # consecutive verses that should be ranges. Rewrite as needed.
-    nums_and_pairs = []
-    start = end = -1
-    for item in verses:
+    nums_and_pairs = get_nums_and_pairs_from_verses_text(split_verses(verses))
+    # Sort by the starting verse.
+    ordered = sorted(nums_and_pairs, key=lambda x: x if isinstance(x, int) else x[0])
+    # Walk the sorted verses, coalescing consecutive/overlapping items into
+    # ranges and dropping redundancies.
+    result: list[Verse] = []
+    end = -1
+    for item in ordered:
         is_num = isinstance(item, int)
         new = item if is_num else item[0]
-        # Do we have a gap in verses that justifies adding a new item to the normalized list?
-        if (new > end + 1) or not nums_and_pairs:
-            start = new
+        # A gap wide enough to start a fresh item in the normalized list?
+        if (new > end + 1) or not result:
             if is_num:
-                end = start
-                nums_and_pairs.append(start)
+                end = new
+                result.append(new)
             else:
                 end = item[1]
-                nums_and_pairs.append((start, end))
+                result.append((new, end))
         else:
             extend = False
-            prev = nums_and_pairs[-1]
+            prev = result[-1]
             prev_is_num = isinstance(prev, int)
-            # Do we have a value that's one bigger than the last verse we saw? This might be
-            # relatively common; a citation might list verses like "1, 2-3" when it should give
-            # a range "1-3".
+            # A value one past the last verse (e.g. "1, 2-3" that should be "1-3")?
             if new == end + 1:
                 extend = True
-            # What about an overlapping range?
-            elif not is_num:
-                if item[1] > end:
-                    extend = True
+            # An overlapping range that reaches past the current end?
+            elif not is_num and item[1] > end:
+                extend = True
             if extend:
                 old_start = prev if prev_is_num else prev[0]
-                nums_and_pairs[-1] = (old_start, new) if is_num else (old_start, item[1])
-                end = nums_and_pairs[-1][1]
-            # else this item is totally redundant
-    return nums_and_pairs
+                result[-1] = (old_start, new) if is_num else (old_start, item[1])
+                end = result[-1][1]
+            # else this item is wholly contained in what we already have
+    return result

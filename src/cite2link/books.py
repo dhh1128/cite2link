@@ -1,15 +1,33 @@
+"""The library of canonical books and the fuzzy name lookup over it.
+
+Books are declared with a compact string DSL, one entry per comma-separated
+item (see the ``_load`` calls below). Each item looks like::
+
+    long name|alternate name|another alt:CanonAbbrev/unique
+
+where the pipe-separated names are all the ways a book may be written, the part
+after ``:`` is the canonical abbreviation (may contain punctuation, spaces, and
+capitals), and the part after ``/`` is the shortest prefix that uniquely
+identifies the book across the whole corpus. A leading digit is treated as an
+ordinal (``1 Nephi``), and a first name ending in ``!`` marks a book cited
+without chapter and verse (a single number, e.g. an Official Declaration).
+"""
+
+from __future__ import annotations
+
 import re
+from collections.abc import Iterable, Iterator
 
 defn_pat = re.compile(r"\s*([^:/]+)(?::\s*([A-Za-z- &]+))?(?:/\s*([1-4a-z]+))?\s*")
 
 
-def _purify_name_chars(name):
+def _purify_name_chars(name: str) -> str:
     name = name.lower()
-    return "".join([c for c in name if c.isalpha() or c.isdigit()])
+    return "".join(c for c in name if c.isalpha() or c.isdigit())
 
 
 class Book:
-    def __init__(self, defn, collection_key):
+    def __init__(self, defn: str, collection_key: str) -> None:
         # Associate the book with its parent collection
         self.collection_key = collection_key
         # Set defaults (may be overridden)
@@ -59,39 +77,34 @@ class Book:
             self.unique = self.names[0]
         # Get a list of all the characters that begin names of this book.
         # We will use this later to optimize lookups.
-        self.first_chars = set([name[0] for name in self.names])
+        self.first_chars = {name[0] for name in self.names}
 
     @property
-    def abbrev_title(self):
+    def abbrev_title(self) -> str | None:
         if self.abbrev:
             return self.ordinal + " " + self.abbrev if self.ordinal else self.abbrev
+        return None
 
     @property
-    def unique_basis(self):
+    def unique_basis(self) -> str:
         return self.ordinal + self.names[0] if self.ordinal else self.names[0]
 
     @property
-    def slug(self):
+    def slug(self) -> str:
         return self.abbrev_title if self.abbrev_title else self.title
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.slug
 
 
-def load(collection_key, definitions):
+def _load(collection_key: str, definitions: str) -> list[Book]:
     return [Book(item, collection_key) for item in definitions.split(",")]
 
 
-# Define collections of books. Each item is in the format:
-#       long name|alternate name|another alt:can/unique
-# ...where long name is the preferred full form title, in its
-# proper case, "can" means a canonical abbreviation, and "unique"
-# means the shortest string that uniquely identifies the book
-# in the corpus of all book names. If the first long name for
-# a book ends with !, this means the book doesn't have
-# both chapter and verse (it's cited with a single number).
+# The canonical library, declared with the DSL documented in the module
+# docstring above.
 
-old_testament = load(
+old_testament = _load(
     "ot",
     "Genesis|gs|gn:Gen/ge,Exodus:Ex,Leviticus:Lev/le,Numbers|nbrs:Num/nu,Deuteronomy:Deut/de,Joshua:Josh,"
     + "Judges:Judg,Ruth/ru,1 Samuel:Sam/1sa,2 Samuel:Sam/2sa,1 Kings|kngs:Kgs/1ki,2 Kings|kngs:Kgs/2ki,"
@@ -103,7 +116,7 @@ old_testament = load(
     + "Zechariah:Zech/zec,Malachi:Mal",
 )
 
-new_testament = load(
+new_testament = _load(
     "nt",
     "Matthew|mathew:Matt/mat,Mark/mar,Luke/lu,John/joh,Acts/ac,Romans:Rom/ro,1 Corinthians|crnth:Cor/1co,"
     + "2 Corinthians|crnth:Cor/2co,Galatians|gltn:Gal/ga,Ephesians|ephs:Eph/ep,Philippians|phlp|phillipians:Philip/phili,"
@@ -114,20 +127,20 @@ new_testament = load(
 
 bible = [old_testament, new_testament]
 
-book_of_mormon = load(
+book_of_mormon = _load(
     "bofm",
     "1 Nephi:Ne/1ne,2 Nephi:Ne/2ne,Jacob/jac,Enos/en,Jarom/jar,Omni/om,Words of Mormon|wm|wom:W of M/wo,"
     + "Mosiah/mosi,Alma/al,Helaman:Hel,3 Nephi:Ne/3ne,4 Nephi:Ne/4ne,Mormon:Morm,Ether/et,Moroni:Moro",
 )
 
-pearl_of_great_price = load(
+pearl_of_great_price = _load(
     "pgp",
     "Moses:Mos/mose,Abraham|abrhm|abrh:Abr/ab,Joseph Smith - Matthew|jsmatthew|jsm|jsmatt|jsmat:JS-M/josephsmithm,"
     + "Joseph Smith - History|jshistory|jsh|jshist|jshis:JS-H/josephsmithh,"
     + "Articles of Faith|artoffaith|artfaith|aof|af|aoff:A of F/ar",
 )
 
-doctrine_and_covenants = load(
+doctrine_and_covenants = _load(
     "dc-testament",
     "Doctrine & Covenants|doctrineandcovenants|docandcov|dnc|d&c|dc:D&C/do,"
     + "Official Declaration!|offdec:OD/of",
@@ -137,13 +150,9 @@ quad = [bible, book_of_mormon, doctrine_and_covenants, pearl_of_great_price]
 
 library = quad
 
-del load
 
-
-def normalize_ordinal(ordinal):
-    """
-    Given a string like "first" or "1st" or "1", return the canonical version ('1').
-    """
+def normalize_ordinal(ordinal: str) -> str:
+    """Given a string like "first" or "1st" or "1", return the canonical form ('1')."""
     return ordinal[0] if ordinal[0].isdigit() else str("ieho".index(ordinal[1].lower()) + 1)
 
 
@@ -152,11 +161,8 @@ _lead_ordinal_pat = re.compile(
 )
 
 
-def find_book(book_name_in_ref):
-    """
-    Look through all known books and find one that matches the given book name.
-    Do fuzzy matching. Return the matching book if found, else None.
-    """
+def find_book(book_name_in_ref: str) -> Book | None:
+    """Find the book matching the given name via fuzzy matching, or None."""
     # Normalize punctuation in what we were given.
     if "&" in book_name_in_ref:
         book_name_in_ref = (
@@ -204,13 +210,10 @@ def find_book(book_name_in_ref):
                     return
 
 
-def next_book(container):
-    """
-    Yield all individual books in a list or list of lists or similar.
-    """
+def next_book(container: Iterable) -> Iterator[Book]:
+    """Yield every individual Book in a (possibly nested) list of books."""
     for item in container:
         if isinstance(item, Book):
             yield item
         else:
-            # Recurse
             yield from next_book(item)
