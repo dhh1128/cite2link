@@ -23,3 +23,14 @@ updates:
     schedule:
       interval: "weekly"
     labels: ["dependencies", "python"]
+    # Batch Python bumps into one weekly PR. ruff alone releases about weekly,
+    # and ungrouped it produced a stream of PRs that each superseded the last
+    # before review. Security updates are grouped separately so a fix for an
+    # alert is not held behind routine version bumps.
+    groups:
+      python:
+        applies-to: version-updates
+        patterns: ["*"]
+      python-security:
+        applies-to: security-updates
+        patterns: ["*"]
